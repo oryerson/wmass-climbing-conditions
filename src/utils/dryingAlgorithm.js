@@ -86,24 +86,58 @@ export function calculateClimbingConditions(weather, crag) {
         // 3. DRYING LOGIC (Runoff-Decay)
         let evaporationCoeff = 0.02; // Base decay
 
-        // Wind Bonus
-        evaporationCoeff += (windSpeed * 0.005);
+        // --- WIND SHELTERING LOGIC ---
+        // Helper: Convert Aspect String to Degrees
+        const getAspectDegrees = (asp) => {
+            const map = { 'N': 0, 'NE': 45, 'E': 90, 'SE': 135, 'S': 180, 'SW': 225, 'W': 270, 'NW': 315 };
+            return map[asp] || 180; // Default to South if unknown
+        };
+        const windDir = weather.hourly.winddirection_10m ? weather.hourly.winddirection_10m[i] : 0;
+        const cragDir = getAspectDegrees(crag.aspect);
 
-        // Sun Bonus (Aspect)
+        // Calculate diff (0-180)
+        let diff = Math.abs(windDir - cragDir);
+        if (diff > 180) diff = 360 - diff;
+
+        // Wind Factor: 1.0 = Direct Hit, 0.2 = Blocked (Lee side)
+        let windExposure = 1.0;
+        if (diff < 60) windExposure = 1.2; // Extra stripping power for headwind
+        else if (diff > 120) windExposure = 0.3; // Sheltered
+
+        evaporationCoeff += (windSpeed * 0.005 * windExposure);
+
+        // --- SUN EXPOSURE LOGIC ---
         const date = new Date(time);
         const hour = date.getHours();
         const isDaytime = hour >= 6 && hour <= 19;
         const isSunny = isDaytime && cloudCover < 50;
 
-        // (Re-calc aspect multiplier for drying if not already done for melt)
-        let aspectMultiplier = 0.2;
+        let sunBonus = 0;
         if (isSunny) {
-            if (crag.aspect === 'S' && hour >= 10 && hour <= 14) aspectMultiplier = 1.0;
-            else if (crag.aspect === 'SE' && hour >= 8 && hour <= 12) aspectMultiplier = 1.0;
-            else if (crag.aspect === 'SW' && hour >= 13 && hour <= 17) aspectMultiplier = 1.0;
-            else aspectMultiplier = 0.5;
+            // Sun Azimuth approximation (North Hemisphere)
+            // Morning (E), Midday (S), Evening (W)
+            // 6-10: E/SE | 10-14: S/SE/SW | 14-18: W/SW
+
+            // Simple overlap check
+            const sunMap = {
+                'N': [], // North faces get effectively no direct drying sun in winter/shoulder
+                'NE': [6, 7, 8],
+                'E': [6, 7, 8, 9, 10],
+                'SE': [8, 9, 10, 11, 12],
+                'S': [10, 11, 12, 13, 14],
+                'SW': [12, 13, 14, 15, 16],
+                'W': [14, 15, 16, 17, 18],
+                'NW': [16, 17, 18]
+            };
+
+            const hoursHit = sunMap[crag.aspect] || [];
+            if (hoursHit.includes(hour)) {
+                sunBonus = 0.15; // Direct sun is powerful
+            } else {
+                sunBonus = 0.02; // Ambient skylight
+            }
         }
-        evaporationCoeff += (aspectMultiplier * 0.08);
+        evaporationCoeff += sunBonus;
 
         // Bouldering Penalty
         if (crag.type === 'boulder') {
