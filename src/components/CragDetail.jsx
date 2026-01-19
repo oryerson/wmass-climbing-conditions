@@ -39,6 +39,7 @@ export function CragDetail({ crag, onBack }) {
                                 <th>Score</th>
                                 <th>Status</th>
                                 <th>Temp</th>
+                                <th>RH</th>
                                 <th>Rain?</th>
                                 <th>Wind</th>
                                 <th>Notes</th>
@@ -56,6 +57,7 @@ export function CragDetail({ crag, onBack }) {
                                         <td>{p.waterLevel > 0 ? '-' : p.score}</td>
                                         <td>{p.status}</td>
                                         <td>{p.details.temp}°F</td>
+                                        <td>{p.details.humidity}%</td>
                                         <td>{p.details.precip > 0 ? `${p.details.precipInch}"` : '-'}</td>
                                         <td>{p.details.windSpeed}mph</td>
                                         <td style={{ fontSize: '11px' }}>
