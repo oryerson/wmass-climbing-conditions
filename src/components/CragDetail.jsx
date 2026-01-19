@@ -45,21 +45,26 @@ export function CragDetail({ crag, onBack }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {days[dateStr].map((p, idx) => (
-                                <tr key={idx} style={{ backgroundColor: p.waterLevel > 0 ? '#e6f3ff' : 'white' }}>
-                                    <td>{new Date(p.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                                    <td>{p.waterLevel > 0 ? '-' : p.score}</td>
-                                    <td>{p.status}</td>
-                                    <td>{p.details.temp}°F</td>
-                                    <td>{p.details.precip > 0 ? `${p.details.precipInch}"` : '-'}</td>
-                                    <td>{p.details.windSpeed}mph</td>
-                                    <td style={{ fontSize: '11px' }}>
-                                        {p.details.snowPack > 0 ? `❄️ Snow: ${p.details.snowInch}"` : (
-                                            p.waterLevel > 0 ? `Wet: ${p.waterLevel}mm` : `Hum: ${p.details.humidity}%`
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
+                            {days[dateStr]
+                                .filter(p => {
+                                    const h = new Date(p.time).getHours();
+                                    return [9, 12, 15, 18].includes(h);
+                                })
+                                .map((p, idx) => (
+                                    <tr key={idx} style={{ backgroundColor: p.waterLevel > 0 ? '#e6f3ff' : 'white' }}>
+                                        <td>{new Date(p.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                        <td>{p.waterLevel > 0 ? '-' : p.score}</td>
+                                        <td>{p.status}</td>
+                                        <td>{p.details.temp}°F</td>
+                                        <td>{p.details.precip > 0 ? `${p.details.precipInch}"` : '-'}</td>
+                                        <td>{p.details.windSpeed}mph</td>
+                                        <td style={{ fontSize: '11px' }}>
+                                            {p.details.snowPack > 0 ? `❄️ Snow: ${p.details.snowInch}"` : (
+                                                p.waterLevel > 0 ? `Wet: ${p.waterLevel}mm` : `Hum: ${p.details.humidity}%`
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
                         </tbody>
                     </table>
                 </div>
